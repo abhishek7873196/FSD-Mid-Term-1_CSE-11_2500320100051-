@@ -56,3 +56,46 @@ app.put("/api/books/:id", (req, res) => {
 app.listen(port, () => {
   console.log(`server is running on port ${port}`);
 });
+app.delete("/api/books/:id", (req, res) => {
+  const index = books.findIndex((b) => b.id === Number(req.params.id));
+  if (index === -1) {
+    return res.status(404).json({ message: "book not found" });
+  }
+  const deletedBook = books.splice(index, 1)[0];
+  res.status(200).json({ message: "book deleted successfully", deletedBook });
+});
+app.get("/api/books/search", (req, res) => {
+  const { title, author, category } = req.query;
+  const results = books.filter(
+    (b) =>
+      (!title || b.title.toLowerCase().includes(title.toLowerCase())) &&
+      (!author || b.author.toLowerCase().includes(author.toLowerCase())) &&
+      (!category || b.category.toLowerCase().includes(category.toLowerCase()))
+  );
+  if (results.length === 0) {
+    return res.status(200).json({ message: "no books found", books: results });
+  }
+  res.status(200).json({ message: "books found", count: results.length, books: results });
+});
+app.post("/api/books/:id/issue", (req, res) => {
+  const book = books.find((b) => b.id === Number(req.params.id));
+  if (!book) {
+    return res.status(404).json({ message: "book not found" });
+  }
+  if (book.available <= 0) {
+    return res.status(400).json({ message: "no copies available to issue" });
+  }
+  book.available -= 1;
+  res.status(200).json({ message: "book issued successfully", book });
+});
+app.post("/api/books/:id/return", (req, res) => {
+  const book = books.find((b) => b.id === Number(req.params.id));
+  if (!book) {
+    return res.status(404).json({ message: "book not found" });
+  }
+  if (book.available >= book.quantity) {
+    return res.status(400).json({ message: "all copies are already returned" });
+  }
+  book.available += 1;
+  res.status(200).json({ message: "book returned successfully", book });
+});
